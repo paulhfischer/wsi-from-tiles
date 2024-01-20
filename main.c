@@ -153,7 +153,6 @@ void createImages(const ImageMap *image_map, const char *output_dir, int save_fu
         VipsImage **tiles = g_malloc_n(image->num_tiles, sizeof(VipsImage *));
         VipsImage *joined;
         VipsImage *full_out;
-        VipsImage *compressed_out;
 
         for (size_t j = 0; j < image->num_tiles; j++)
         {
@@ -188,6 +187,8 @@ void createImages(const ImageMap *image_map, const char *output_dir, int save_fu
 
         if (save_compressed)
         {
+            VipsImage *compressed_out;
+
             if (vips_thumbnail_image(full_out, &compressed_out, compressed_size, "height", compressed_size, NULL))
             {
                 fprintf(stderr, "Error (thumbnail_image): %s", vips_error_buffer());
@@ -203,12 +204,13 @@ void createImages(const ImageMap *image_map, const char *output_dir, int save_fu
                 exit(EXIT_FAILURE);
             }
             printf("⇒ saved (compressed) %s\n", image->id);
+
+            g_object_unref(compressed_out);
         }
 
         g_free(tiles);
         g_object_unref(joined);
         g_object_unref(full_out);
-        g_object_unref(compressed_out);
     }
 }
 
