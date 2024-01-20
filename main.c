@@ -8,7 +8,7 @@
 #include "image.h"
 #include "tile.h"
 
-#define FILE_REGEX "^([a-f0-9-]+)-([0-9]+)-([0-9]+)\\.jpg$"
+#define FILE_REGEX "^([a-f0-9-]+) @\\(([0-9]+)\\|([0-9]+)\\)\\.jpg$"
 
 int DEBUG = 0;
 
