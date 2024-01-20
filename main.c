@@ -177,7 +177,7 @@ void createImages(const ImageMap *image_map, const char *output_dir, int save_fu
         {
             char full_output_path[256];
             snprintf(full_output_path, sizeof(full_output_path), "%s/%s.tiff", output_dir, image->id);
-            if (vips_tiffsave(full_out, full_output_path, "compression", VIPS_FOREIGN_TIFF_COMPRESSION_DEFLATE, "bigtiff", TRUE, "resunit", VIPS_FOREIGN_TIFF_RESUNIT_INCH, "xres", 300.0, "yres", 300.0, "Q", 100, NULL) != 0)
+            if (vips_tiffsave(full_out, full_output_path, "compression", VIPS_FOREIGN_TIFF_COMPRESSION_DEFLATE, "bigtiff", TRUE, "resunit", VIPS_FOREIGN_TIFF_RESUNIT_INCH, "xres", 300 / 25.4, "yres", 300 / 25.4, "Q", 100, NULL) != 0)
             {
                 fprintf(stderr, "Error (tiffsave): %s", vips_error_buffer());
                 exit(EXIT_FAILURE);
