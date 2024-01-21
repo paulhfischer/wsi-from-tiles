@@ -142,7 +142,7 @@ ImageMap *loadImages(const char *input_dir)
     return image_map;
 }
 
-void createImages(const ImageMap *image_map, const char *output_dir, int save_full, int save_compressed, int compressed_size)
+void createImages(const ImageMap *image_map, const char *output_dir, int save_full, int pyramid, int save_compressed, int compressed_size)
 {
     for (size_t i = 0; i < image_map->num_images; i++)
     {
@@ -177,10 +177,21 @@ void createImages(const ImageMap *image_map, const char *output_dir, int save_fu
         {
             char full_output_path[256];
             snprintf(full_output_path, sizeof(full_output_path), "%s/%s.tiff", output_dir, image->id);
-            if (vips_tiffsave(full_out, full_output_path, "compression", VIPS_FOREIGN_TIFF_COMPRESSION_DEFLATE, "bigtiff", TRUE, "resunit", VIPS_FOREIGN_TIFF_RESUNIT_INCH, "xres", 300 / 25.4, "yres", 300 / 25.4, "Q", 100, NULL) != 0)
+            if (pyramid)
             {
-                fprintf(stderr, "Error (tiffsave): %s", vips_error_buffer());
-                exit(EXIT_FAILURE);
+                if (vips_tiffsave(full_out, full_output_path, "compression", VIPS_FOREIGN_TIFF_COMPRESSION_DEFLATE, "tile", TRUE, "pyramid", TRUE, "region_shrink", VIPS_REGION_SHRINK_MODE, "bigtiff", TRUE, "resunit", VIPS_FOREIGN_TIFF_RESUNIT_INCH, "xres", 300 / 25.4, "yres", 300 / 25.4, "Q", 100, NULL) != 0)
+                {
+                    fprintf(stderr, "Error (tiffsave): %s", vips_error_buffer());
+                    exit(EXIT_FAILURE);
+                }
+            }
+            else
+            {
+                if (vips_tiffsave(full_out, full_output_path, "compression", VIPS_FOREIGN_TIFF_COMPRESSION_DEFLATE, "bigtiff", TRUE, "resunit", VIPS_FOREIGN_TIFF_RESUNIT_INCH, "xres", 300 / 25.4, "yres", 300 / 25.4, "Q", 100, NULL) != 0)
+                {
+                    fprintf(stderr, "Error (tiffsave): %s", vips_error_buffer());
+                    exit(EXIT_FAILURE);
+                }
             }
             printf("⇒ saved (full) %s\n", image->id);
         }
@@ -214,17 +225,18 @@ void createImages(const ImageMap *image_map, const char *output_dir, int save_fu
     }
 }
 
-void parse_args(int argc, char *argv[], char **input_dir, char **output_dir, int *save_full, int *save_compressed, int *compressed_size)
+void parse_args(int argc, char *argv[], char **input_dir, char **output_dir, int *save_full, int *pyramid, int *save_compressed, int *compressed_size)
 {
     if (argc < 3)
     {
-        fprintf(stderr, "Usage: %s <input_dir> <output_dir> [--debug] [--save-full] [--save-compressed] [--compressed_size=...]\n", argv[0]);
+        fprintf(stderr, "Usage: %s <input_dir> <output_dir> [--debug] [--save-full] [--pyramid] [--save-compressed] [--compressed_size=...]\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
     *input_dir = argv[1];
     *output_dir = argv[2];
     *save_full = 0;
+    *pyramid = 0;
     *save_compressed = 0;
     *compressed_size = 10000;
 
@@ -239,6 +251,12 @@ void parse_args(int argc, char *argv[], char **input_dir, char **output_dir, int
         if (strcmp(argv[i], "--save-full") == 0)
         {
             *save_full = 1;
+            continue;
+        }
+
+        if (strcmp(argv[i], "--pyramid") == 0)
+        {
+            *pyramid = 1;
             continue;
         }
 
@@ -264,10 +282,11 @@ int main(int argc, char *argv[])
     char *input_dir;
     char *output_dir;
     int save_full;
+    int pyramid;
     int save_compressed;
     int compressed_size;
 
-    parse_args(argc, argv, &input_dir, &output_dir, &save_full, &save_compressed, &compressed_size);
+    parse_args(argc, argv, &input_dir, &output_dir, &save_full, &pyramid, &save_compressed, &compressed_size);
 
     if (VIPS_INIT("image-processing") != 0)
     {
@@ -278,7 +297,7 @@ int main(int argc, char *argv[])
 
     if (save_full || save_compressed)
     {
-        createImages(image_map, output_dir, save_full, save_compressed, compressed_size);
+        createImages(image_map, output_dir, save_full, pyramid, save_compressed, compressed_size);
     }
 
     cleanup_ImageMap(image_map);
